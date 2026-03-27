@@ -1,4 +1,5 @@
 import express from "express";
+import { logger } from "./logger.js";
 
 // =======================
 // Helpers
@@ -29,13 +30,18 @@ export function createApp({ pool }) {
   // Healthcheck
   // =======================
 
+  app.get("/health", async (_, res) => {
+    await pool.query("SELECT 1");
+    res.status(200).send("ok");
+  });
+
   // =======================
   // CRUD NOTES
   // =======================
 
   // GET /notes
   app.get("/notes", async (_, res) => {
-    console.log("Fetching all notes");
+    logger("Fetching all notes");
 
     const result = await pool.query(
       "SELECT * FROM notes ORDER BY created_at DESC",
@@ -47,7 +53,7 @@ export function createApp({ pool }) {
   app.post("/notes", async (req, res) => {
     const { title, content } = req.body;
 
-    console.log("Creating note", { title });
+    logger("Creating note", { title });
 
     if (!isNonEmptyString(title)) {
       return res.status(400).json({
@@ -60,7 +66,7 @@ export function createApp({ pool }) {
       [title, content],
     );
 
-    console.log("Note created", { id: result.rows[0].id });
+    logger("Note created", { id: result.rows[0].id });
 
     res.status(201).json(result.rows[0]);
   });
@@ -72,7 +78,7 @@ export function createApp({ pool }) {
 
     const { title, content } = req.body;
 
-    console.log("Updating note", { id });
+    logger("Updating note", { id });
 
     if (!isNonEmptyString(title)) {
       return res.status(400).json({
@@ -101,7 +107,7 @@ export function createApp({ pool }) {
       return res.status(404).json({ error: "note not found" });
     }
 
-    console.log("Note updated", { id });
+    logger("Note updated", { id });
 
     res.json(result.rows[0]);
   });
@@ -110,7 +116,7 @@ export function createApp({ pool }) {
   app.get("/notes/:id", async (req, res) => {
     const { id } = req.params;
 
-    console.log("Fetching note", { id });
+    logger("Fetching note", { id });
 
     const result = await pool.query("SELECT * FROM notes WHERE id = $1", [id]);
 
@@ -125,7 +131,7 @@ export function createApp({ pool }) {
   app.delete("/notes/:id", async (req, res) => {
     const { id } = req.params;
 
-    console.log("Deleting note", { id });
+    logger("Deleting note", { id });
 
     const result = await pool.query(
       "DELETE FROM notes WHERE id = $1 RETURNING *",
@@ -136,7 +142,7 @@ export function createApp({ pool }) {
       return res.status(404).json({ error: "note not found" });
     }
 
-    console.log("Note deleted", { id });
+    logger("Note deleted", { id });
 
     res.status(204).send();
   });
