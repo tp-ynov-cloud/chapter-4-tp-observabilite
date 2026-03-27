@@ -34,9 +34,27 @@ export function createApp({ pool }) {
   // Healthcheck
   // =======================
 
-  app.get("/health", async (_, res) => {
-    await pool.query("SELECT 1");
-    res.status(200).send("ok");
+  app.get("/health", (_, res) => {
+    res.status(200).json({ status: "ok" });
+  });
+
+  app.get("/health/db", async (_, res) => {
+    try {
+      await pool.query("SELECT 1");
+      res.status(200).json({
+        status: "ok",
+        database: "up",
+      });
+    } catch (err) {
+      logger.error("Database healthcheck failed", {
+        error: err.message,
+      });
+
+      res.status(503).json({
+        status: "error",
+        database: "down",
+      });
+    }
   });
 
   // =======================
