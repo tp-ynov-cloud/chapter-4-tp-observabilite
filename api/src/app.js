@@ -1,5 +1,6 @@
 import express from "express";
 import { logger } from "./logger.js";
+import { metricsHandler, metricsMiddleware } from "./metrics.js";
 
 // =======================
 // Helpers
@@ -25,6 +26,9 @@ function parseId(req, res) {
 export function createApp({ pool }) {
   const app = express();
   app.use(express.json());
+  app.use(metricsMiddleware);
+
+  app.get("/metrics", metricsHandler);
 
   // =======================
   // Healthcheck
